@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -37,4 +39,5 @@ def plot_grid(env, rl_path, naive_path, time_mode):
 
     plt.legend()
     plt.tight_layout()
-    plt.show()
+    plt.savefig(f"experiments/plots/grid_{time_mode}.png")
+    plt.close()

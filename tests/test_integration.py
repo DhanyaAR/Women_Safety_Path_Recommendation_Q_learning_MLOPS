@@ -2,7 +2,7 @@ from sim.environment import Environment
 from rl.qlearning import QLearningAgent
 
 def test_full_training_loop():
-    """Agent should reach goal within 200 steps after 100 training episodes."""
+    """Agent should reach goal within 200 steps after 500 training episodes."""
     env = Environment()
     agent = QLearningAgent(actions=env.actions)
 

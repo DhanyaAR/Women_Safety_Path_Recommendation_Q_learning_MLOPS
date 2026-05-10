@@ -7,7 +7,7 @@ class QLearningAgent:
         self.alpha = alpha
         self.gamma = gamma
 
-        # 🔥 Improved exploration strategy
+        # Improved exploration strategy
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
         self.epsilon_min = epsilon_min
@@ -23,7 +23,7 @@ class QLearningAgent:
             q_values = [self.get_q(state, a) for a in self.actions]
             max_q = max(q_values)
 
-            # 🔥 handle ties (important improvement)
+            # handle ties 
             best_actions = [a for a, q in enumerate(q_values) if q == max_q]
             return random.choice(best_actions)
 
@@ -39,6 +39,6 @@ class QLearningAgent:
         self.q_table[(state, action)] = new_q
 
     def decay_epsilon(self):
-        # 🔥 gradually reduce exploration
+        # gradually reduce exploration
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay

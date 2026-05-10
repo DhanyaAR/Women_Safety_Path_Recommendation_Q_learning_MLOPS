@@ -21,7 +21,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Create output folders
-        run: mkdir -p experiments/logs experiments/policies
+        run: mkdir -p experiments/logs experiments/policies experiments/plots
 
       - name: Run unit and integration tests
         run: python -m pytest tests/ -v
