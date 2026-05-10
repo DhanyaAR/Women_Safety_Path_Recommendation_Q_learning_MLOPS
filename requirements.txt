@@ -3,3 +3,5 @@ numpy
 PyYAML
 fastapi
 uvicorn
+pytest
+httpx
