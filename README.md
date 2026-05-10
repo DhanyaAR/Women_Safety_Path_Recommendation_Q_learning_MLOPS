@@ -65,6 +65,7 @@ to exploitation. Final Q-table coverage: 98% (384/392 state-action pairs).
 
 ## 🗂️ Project Structure
 
+\```
 REL-MLOPS-PROJECT/
 ├── sim/
 │   └── environment.py        # Grid environment with day/night risk maps
@@ -89,6 +90,7 @@ REL-MLOPS-PROJECT/
 ├── requirements.txt
 ├── train.py                  # Main training script
 └── visualize.py              # Grid path visualisation
+\```
 
 
 ---
