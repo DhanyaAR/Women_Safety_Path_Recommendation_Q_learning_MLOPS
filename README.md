@@ -65,6 +65,7 @@ to exploitation. Final Q-table coverage: 98% (384/392 state-action pairs).
 
 ## 🗂️ Project Structure
 
+```
 REL-MLOPS-PROJECT/
 ├── sim/
 │   └── environment.py        # Grid environment with day/night risk maps
@@ -78,18 +79,18 @@ REL-MLOPS-PROJECT/
 ├── configs/
 │   └── qlearning.yaml        # Hyperparameters and config
 ├── experiments/
-│   ├── logs/                 # CSV training logs per run
-│   ├── plots/                # Saved training graphs
+│   ├── logs/
+│   ├── plots/
 │   └── policies/
-│       ├── policy_v1.pkl     # Checkpoint at episode 500
-│       └── policy_v2_final.pkl # Final trained policy
+│       ├── policy_v1.pkl
+│       └── policy_v2_final.pkl
 ├── .github/workflows/
-│   └── train.yml             # GitHub Actions CI/CD
+│   └── train.yml
 ├── Dockerfile
 ├── requirements.txt
-├── train.py                  # Main training script
-└── visualize.py              # Grid path visualisation
-
+├── train.py
+└── visualize.py
+```
 
 ---
 
