@@ -5,7 +5,7 @@ algorithm: Q-Learning
 justification: "State space (7x7 grid x 2 time modes = 98 states) is small and discrete, making tabular Q-learning fast and interpretable."
 
 hyperparameters:
-  alpha: 0.1          # learning rate
+  alpha: 0.1        # learning rate
   gamma: 0.9          # discount factor
   epsilon: 1.0        # initial exploration rate
   epsilon_decay: 0.995
