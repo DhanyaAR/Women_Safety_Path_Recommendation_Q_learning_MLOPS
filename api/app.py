@@ -130,7 +130,7 @@ def ui():
 <head>
     <title>Women's Safety Route Recommendation</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; background: #0f0f0f; color: white; padding: 20px; }
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: 50px auto; background: #0f0f0f; color: white; padding: 20px; }
         h1 { color: #ff6b9d; text-align: center; }
         p { text-align: center; color: #aaa; }
         .btn-group { display: flex; gap: 20px; justify-content: center; margin: 30px 0; }
@@ -143,7 +143,13 @@ def ui():
         .label { color: #aaa; }
         .value { color: #4cc9f0; font-weight: bold; }
         .safe { color: #4ade80; }
-        .path { font-size: 12px; color: #888; margin-top: 10px; word-break: break-all; }
+        .grid-section { display: flex; gap: 20px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+        .grid-wrap { text-align: center; }
+        .grid-title { color: #aaa; margin-bottom: 8px; font-size: 13px; }
+        canvas { border-radius: 8px; border: 1px solid #333; }
+        .legend { display: flex; gap: 16px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #aaa; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
     </style>
 </head>
 <body>
@@ -178,13 +184,127 @@ def ui():
             <span class="label">Path Length</span>
             <span class="value" id="steps"></span>
         </div>
-        <div class="path" id="path"></div>
+
+        <div class="grid-section">
+            <div class="grid-wrap">
+                <div class="grid-title">🟠 RL Agent Path</div>
+                <canvas id="rlCanvas" width="280" height="280"></canvas>
+            </div>
+            <div class="grid-wrap">
+                <div class="grid-title">🔵 BFS Shortest Path</div>
+                <canvas id="bfsCanvas" width="280" height="280"></canvas>
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#4ade80"></div> Start</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#f87171"></div> Goal</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div> RL Path</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#60a5fa"></div> BFS Path</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#1e1b4b"></div> Safe (low risk)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div> Dangerous (high risk)</div>
+        </div>
     </div>
 
     <script>
+        const DAY_RISK = [
+            [1,1,2,8,9,9,1],[1,9,9,9,9,9,1],[1,1,1,1,1,9,1],
+            [9,9,9,9,1,9,1],[1,1,1,9,1,1,1],[1,9,1,9,9,9,1],[1,1,1,1,1,1,0]
+        ];
+        const NIGHT_RISK = [
+            [1,1,2,5,6,6,1],[1,9,9,9,9,9,1],[1,8,8,8,1,9,1],
+            [9,9,9,9,1,9,1],[1,1,1,9,7,7,7],[1,9,1,9,9,9,1],[9,9,9,9,9,9,0]
+        ];
+
+        function riskColor(risk) {
+            const t = risk / 9;
+            const r = Math.round(30 + t * 220);
+            const g = Math.round(27 + (1-t) * 150);
+            const b = Math.round(75 * (1-t));
+            return `rgb(${r},${g},${b})`;
+        }
+
+        function drawGrid(canvasId, riskMap, path, pathColor) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            const size = 40;
+
+            // Draw risk map
+            for (let r = 0; r < 7; r++) {
+                for (let c = 0; c < 7; c++) {
+                    ctx.fillStyle = riskColor(riskMap[r][c]);
+                    ctx.fillRect(c * size, r * size, size, size);
+                    ctx.strokeStyle = '#111';
+                    ctx.strokeRect(c * size, r * size, size, size);
+
+                    // Risk number
+                    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                    ctx.font = '10px Arial';
+                    ctx.fillText(riskMap[r][c], c * size + 15, r * size + 25);
+                }
+            }
+
+            // Draw path
+            ctx.strokeStyle = pathColor;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            for (let i = 0; i < path.length; i++) {
+                const [r, c] = path[i];
+                const x = c * size + size/2;
+                const y = r * size + size/2;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // Draw dots on path
+            for (let i = 0; i < path.length; i++) {
+                const [r, c] = path[i];
+                const x = c * size + size/2;
+                const y = r * size + size/2;
+                ctx.beginPath();
+                ctx.arc(x, y, 5, 0, Math.PI * 2);
+                ctx.fillStyle = pathColor;
+                ctx.fill();
+            }
+
+            // Start — green
+            ctx.beginPath();
+            ctx.arc(size/2, size/2, 8, 0, Math.PI * 2);
+            ctx.fillStyle = '#4ade80';
+            ctx.fill();
+
+            // Goal — red
+            ctx.beginPath();
+            ctx.arc(6*size + size/2, 6*size + size/2, 8, 0, Math.PI * 2);
+            ctx.fillStyle = '#f87171';
+            ctx.fill();
+        }
+
+        function bfsPath() {
+            const grid = 7;
+            const start = [0,0], goal = [6,6];
+            const queue = [[start, [start]]];
+            const visited = new Set();
+            while (queue.length) {
+                const [curr, path] = queue.shift();
+                const key = curr.join(',');
+                if (curr[0]===goal[0] && curr[1]===goal[1]) return path;
+                if (visited.has(key)) continue;
+                visited.add(key);
+                for (const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+                    const nr = curr[0]+dr, nc = curr[1]+dc;
+                    if (nr>=0&&nr<grid&&nc>=0&&nc<grid)
+                        queue.push([[nr,nc], [...path,[nr,nc]]]);
+                }
+            }
+            return [];
+        }
+
         async function getRoute(time) {
             const res = await fetch(`/predict/${time}`);
             const data = await res.json();
+
             document.getElementById('result').style.display = 'block';
             document.getElementById('verdict').innerText = data.verdict;
             document.getElementById('time').innerText = data.time_of_day.toUpperCase();
@@ -192,7 +312,12 @@ def ui():
             document.getElementById('bfs_risk').innerText = data.bfs_baseline_risk;
             document.getElementById('reduction').innerText = data.risk_reduction_vs_bfs;
             document.getElementById('steps').innerText = data.steps + ' steps';
-            document.getElementById('path').innerText = 'Path: ' + JSON.stringify(data.path);
+
+            const riskMap = time === 'day' ? DAY_RISK : NIGHT_RISK;
+            const naivePath = bfsPath();
+
+            drawGrid('rlCanvas', riskMap, data.path, '#f97316');
+            drawGrid('bfsCanvas', riskMap, naivePath, '#60a5fa');
         }
     </script>
 </body>
