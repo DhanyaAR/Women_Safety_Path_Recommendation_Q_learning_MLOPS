@@ -2,6 +2,7 @@ from fastapi import FastAPI
 import pickle
 from collections import deque
 from sim.environment import Environment
+from fastapi.responses import HTMLResponse
 
 app = FastAPI(
     title="Women's Safety Route Recommendation API",
@@ -119,3 +120,81 @@ def predict_night():
         "risk_reduction_vs_bfs": f"{reduction}%",
         "verdict":               f"RL route is {reduction}% safer than the shortest path"
     }
+
+
+@app.get("/ui", response_class=HTMLResponse)
+def ui():
+    return """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Women's Safety Route Recommendation</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; background: #0f0f0f; color: white; padding: 20px; }
+        h1 { color: #ff6b9d; text-align: center; }
+        p { text-align: center; color: #aaa; }
+        .btn-group { display: flex; gap: 20px; justify-content: center; margin: 30px 0; }
+        button { padding: 15px 40px; font-size: 16px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        .day-btn { background: #f9c74f; color: black; }
+        .night-btn { background: #4361ee; color: white; }
+        .result { background: #1a1a2e; border-radius: 12px; padding: 20px; margin-top: 20px; display: none; }
+        .verdict { font-size: 20px; color: #4cc9f0; font-weight: bold; text-align: center; margin-bottom: 15px; }
+        .metric { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #333; }
+        .label { color: #aaa; }
+        .value { color: #4cc9f0; font-weight: bold; }
+        .safe { color: #4ade80; }
+        .path { font-size: 12px; color: #888; margin-top: 10px; word-break: break-all; }
+    </style>
+</head>
+<body>
+    <h1>🛡️ Women's Safety Route Recommendation</h1>
+    <p>AI-powered route recommendation that learns safer paths using Reinforcement Learning</p>
+    <p style="color:#ff6b9d">SDG 11 — Sustainable Cities and Communities</p>
+
+    <div class="btn-group">
+        <button class="day-btn" onclick="getRoute('day')">☀️ Get Day Route</button>
+        <button class="night-btn" onclick="getRoute('night')">🌙 Get Night Route</button>
+    </div>
+
+    <div class="result" id="result">
+        <div class="verdict" id="verdict"></div>
+        <div class="metric">
+            <span class="label">Time of Day</span>
+            <span class="value" id="time"></span>
+        </div>
+        <div class="metric">
+            <span class="label">RL Agent Risk Score</span>
+            <span class="value safe" id="rl_risk"></span>
+        </div>
+        <div class="metric">
+            <span class="label">BFS Shortest Path Risk</span>
+            <span class="value" id="bfs_risk"></span>
+        </div>
+        <div class="metric">
+            <span class="label">Risk Reduction</span>
+            <span class="value safe" id="reduction"></span>
+        </div>
+        <div class="metric">
+            <span class="label">Path Length</span>
+            <span class="value" id="steps"></span>
+        </div>
+        <div class="path" id="path"></div>
+    </div>
+
+    <script>
+        async function getRoute(time) {
+            const res = await fetch(`/predict/${time}`);
+            const data = await res.json();
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('verdict').innerText = data.verdict;
+            document.getElementById('time').innerText = data.time_of_day.toUpperCase();
+            document.getElementById('rl_risk').innerText = data.total_risk;
+            document.getElementById('bfs_risk').innerText = data.bfs_baseline_risk;
+            document.getElementById('reduction').innerText = data.risk_reduction_vs_bfs;
+            document.getElementById('steps').innerText = data.steps + ' steps';
+            document.getElementById('path').innerText = 'Path: ' + JSON.stringify(data.path);
+        }
+    </script>
+</body>
+</html>
+"""
