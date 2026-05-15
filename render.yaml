@@ -2,4 +2,6 @@ services:
   - type: web
     name: women-safety-api
     env: docker
+    dockerfilePath: Dockerfile.api
     plan: free
+    envVars: []
